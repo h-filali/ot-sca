@@ -9,7 +9,7 @@ target:
   protocol: "ujson"
   port: "/dev/ttyACM4"
 husky:
-  samling_rate: 200000000
+  sampling_rate: 200000000
   num_segments: 20
   num_cycles: 100
   # Do not capture 100 nops that are inserted to give the trigger time to rise.
