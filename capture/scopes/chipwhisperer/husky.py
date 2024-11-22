@@ -104,19 +104,21 @@ class Husky:
         self.scope.arm()
 
     def capture_and_transfer_waves(self, target=None):
-        if self.num_segments == 1:
-            ret = self.scope.capture(poll_done=False)
-            i = 0
-            while not target.is_done():
-                i += 1
-                time.sleep(0.05)
-                if i > 100:
-                    print("Warning: Target did not finish operation")
-            if ret:
-                print("Warning: Timeout happened during capture")
+        if self.batch_mode:
+            # Batch mode
+            return self.scope.capture_and_transfer_waves()
 
-            # Get Husky trace (single mode only) and return as array with one item
-            return np.array([self.scope.get_last_trace(as_int=True)])
+        # Non Batch mode
+        ret = self.scope.capture(poll_done=False)
+        i = 0
+        while not target.is_done():
+            i += 1
+            time.sleep(0.05)
+            if i > 100:
+                print("Warning: Target did not finish operation")
+        if ret:
+            print("Warning: Timeout happened during capture")
 
-        # Batch mode
-        return self.scope.capture_and_transfer_waves()
+        # Get Husky trace (single mode only) and return as array with one item
+        return np.array([self.scope.get_last_trace(as_int=True)])
+
