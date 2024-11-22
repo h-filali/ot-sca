@@ -1,0 +1,30 @@
+target:
+  target_type: cw310
+  fpga_bitstream: ../objs/lowrisc_systems_chip_earlgrey_cw310_0.1.bit
+  force_program_bitstream: True
+  fw_bin: ../objs/firmware_fpga_cw310_test_rom_fpga_cw310_test_rom.bin
+  target_clk_mult: 0.24
+  target_freq: 24000000
+  baudrate: 115200
+  protocol: "ujson"
+  port: "/dev/ttyACM4"
+  trigger: "sw"
+husky:
+  sampling_rate: 200000000
+  num_segments: 1
+  num_cycles: 8791
+  # Do not capture 30 nops that are inserted to give the trigger time to rise.
+  offset_cycles: 30
+  scope_gain: 27
+capture:
+  scope_select: husky
+  num_traces: 20
+  show_plot: True
+  plot_traces: 100
+  trace_db: ot_trace_library
+  trace_threshold: 10000
+test:
+  which_test: ml_dsa_ntt_vec_batch_fvsr
+  # seed for PRNG to generate sequence of plaintexts and keys; Python random
+  # class on host, Mersenne twister implementation on OT SW.
+  batch_prng_seed: 0
