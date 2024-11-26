@@ -7,12 +7,28 @@ target:
   target_freq: 24000000
   baudrate: 115200
   protocol: "ujson"
-  port: "/dev/ttyACM4"
+  port: "/dev/ttyACM3"
   trigger: "sw"
 husky:
   sampling_rate: 200000000
   num_segments: 1
-  num_cycles: 8791
+  # Maximum number of samples that can be recorded is 98352 (11802 cycles)
+  # Rejection sampling cycles
+  # num_cycles: 4255
+  # Decompose cycles (Needs to be made time constant so this might change)
+  # num_cycles: 730
+  # VEC ADD cycles
+  # num_cycles: 2189
+  # VEC SUB cycles
+  # num_cycles: 2190
+  # VEC MUL cycles
+  # num_cycles: 4755
+  # VEC MAC cycles
+  # num_cycles: 4970
+  # NTT cycles
+  # num_cycles: 8791
+  # INTT cycles
+  num_cycles: 9862
   # Do not capture 30 nops that are inserted to give the trigger time to rise.
   offset_cycles: 30
   scope_gain: 27
@@ -20,11 +36,19 @@ capture:
   scope_select: husky
   num_traces: 20
   show_plot: True
-  plot_traces: 100
+  plot_traces: 20
   trace_db: ot_trace_library
   trace_threshold: 10000
 test:
-  which_test: ml_dsa_ntt_vec_batch_fvsr
+  # which_test: ml_dsa_vec_reject_batch_fvsr
+  # which_test: ml_dsa_decompose_batch_fvsr
+  # which_test: ml_dsa_vec_add_batch_fvsr
+  # which_test: ml_dsa_vec_sub_batch_fvsr
+  # which_test: ml_dsa_vec_mul_batch_fvsr
+  # which_test: ml_dsa_vec_mac_batch_fvsr
+  # which_test: ml_dsa_vec_ntt_batch_fvsr
+  which_test: ml_dsa_vec_intt_batch_fvsr
+
   # seed for PRNG to generate sequence of plaintexts and keys; Python random
   # class on host, Mersenne twister implementation on OT SW.
   batch_prng_seed: 0

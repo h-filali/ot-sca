@@ -277,23 +277,22 @@ def capture(scope: Scope, ot_ml_dsa: OTMLDSA, ot_prng: OTPRNG,
             # Store traces.
             if "batch" in capture_cfg.test_mode:
                 for i in range(capture_cfg.num_segments):
+                    d_bytes = [number.to_bytes(4, byteorder='big') for number in data[i]]
                     # Sanity check retrieved data (wave).
                     assert len(waves[i, :]) >= 1
                     # Store trace into database.
                     project.append_trace(wave = waves[i, :],
-                                         plaintext = bytes(data[i]),
+                                         plaintext = b''.join(d_bytes),
                                          ciphertext = None,
                                          key = None)
             else:
-                # Convert data into bytearray for storage in database.
-                data_bytes = []
                 for d in data:
-                    data_bytes.append(d)
+                    d_bytes = [number.to_bytes(4, byteorder='big') for number in d]
                     # Sanity check retrieved data (wave).
                     assert len(waves[0, :]) >= 1
                     # Store trace into database.
                     project.append_trace(wave = waves[0, :],
-                                         plaintext = bytes(data_bytes),
+                                         plaintext = b''.join(d_bytes),
                                          ciphertext = None,
                                          key = None)
 
