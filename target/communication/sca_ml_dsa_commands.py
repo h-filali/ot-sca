@@ -54,11 +54,113 @@ class OTMLDSA:
             # Read back device ID from device.
             return self.read_response(max_tries=30)
 
-    def ml_dsa_ntt_vec_batch_fvsr(self, data: int, num_segments: list[int]):
+    def ml_dsa_vec_reject_batch_fvsr(self, data: int, num_segments: list[int]):
+        """ Start FVSR execution for rejection sampling in ML-DSA.
+        Args:
+            num_segments: The number of times the app should be executed.
+            data: The fixed vector used for FVSR execution.
+        """
+        # MlDsaSca command.
+        self._ujson_ml_dsa_sca_cmd()
+        # NttFvsr command.
+        self.target.write(json.dumps("RejectFvsr").encode("ascii"))
+        # Send the number of iterations and the fixed vector.
+        time.sleep(0.01)
+        data = {"data": [x for x in data],
+                "data_length": 4*len(data),
+                "iterations": num_segments}
+        self.target.write(json.dumps(data).encode("ascii"))
+
+    def ml_dsa_decompose_batch_fvsr(self, data: int, num_segments: list[int]):
+        """ Start FVSR execution for decompose in ML-DSA.
+        Args:
+            num_segments: The number of times the app should be executed.
+            data: The fixed vector used for FVSR execution.
+        """
+        # MlDsaSca command.
+        self._ujson_ml_dsa_sca_cmd()
+        # NttFvsr command.
+        self.target.write(json.dumps("DecomposeFvsr").encode("ascii"))
+        # Send the number of iterations and the fixed vector.
+        time.sleep(0.01)
+        data = {"data": data,
+                "data_length": 4,
+                "iterations": num_segments}
+        self.target.write(json.dumps(data).encode("ascii"))
+
+    def ml_dsa_vec_add_batch_fvsr(self, data: int, num_segments: list[int]):
+        """ Start FVSR execution for vector addition in ML-DSA.
+        Args:
+            num_segments: The number of times the app should be executed.
+            data: The fixed vector used for FVSR execution.
+        """
+        # MlDsaSca command.
+        self._ujson_ml_dsa_sca_cmd()
+        # NttFvsr command.
+        self.target.write(json.dumps("VecAddFvsr").encode("ascii"))
+        # Send the number of iterations and the fixed vector.
+        time.sleep(0.01)
+        data = {"data": [x for x in data],
+                "data_length": 4*len(data),
+                "iterations": num_segments}
+        self.target.write(json.dumps(data).encode("ascii"))
+
+    def ml_dsa_vec_sub_batch_fvsr(self, data: int, num_segments: list[int]):
+        """ Start FVSR execution for vector subtraction in ML-DSA.
+        Args:
+            num_segments: The number of times the app should be executed.
+            data: The fixed vector used for FVSR execution.
+        """
+        # MlDsaSca command.
+        self._ujson_ml_dsa_sca_cmd()
+        # NttFvsr command.
+        self.target.write(json.dumps("VecSubFvsr").encode("ascii"))
+        # Send the number of iterations and the fixed vector.
+        time.sleep(0.01)
+        data = {"data": [x for x in data],
+                "data_length": 4*len(data),
+                "iterations": num_segments}
+        self.target.write(json.dumps(data).encode("ascii"))
+
+    def ml_dsa_vec_mul_batch_fvsr(self, data: int, num_segments: list[int]):
+        """ Start FVSR execution for vector multiplication in ML-DSA.
+        Args:
+            num_segments: The number of times the app should be executed.
+            data: The fixed vector used for FVSR execution.
+        """
+        # MlDsaSca command.
+        self._ujson_ml_dsa_sca_cmd()
+        # NttFvsr command.
+        self.target.write(json.dumps("VecMulFvsr").encode("ascii"))
+        # Send the number of iterations and the fixed vector.
+        time.sleep(0.01)
+        data = {"data": [x for x in data],
+                "data_length": 4*len(data),
+                "iterations": num_segments}
+        self.target.write(json.dumps(data).encode("ascii"))
+
+    def ml_dsa_vec_mac_batch_fvsr(self, data: int, num_segments: list[int]):
+        """ Start FVSR execution for vector MAC in ML-DSA.
+        Args:
+            num_segments: The number of times the app should be executed.
+            data: The fixed vector used for FVSR execution.
+        """
+        # MlDsaSca command.
+        self._ujson_ml_dsa_sca_cmd()
+        # NttFvsr command.
+        self.target.write(json.dumps("VecMacFvsr").encode("ascii"))
+        # Send the number of iterations and the fixed vector.
+        time.sleep(0.01)
+        data = {"data": [x for x in data],
+                "data_length": 4*len(data),
+                "iterations": num_segments}
+        self.target.write(json.dumps(data).encode("ascii"))
+
+    def ml_dsa_vec_ntt_batch_fvsr(self, data: int, num_segments: list[int]):
         """ Start FVSR execution for NTT in ML-DSA.
         Args:
-            num_iterations: The number of times the app should be executed.
-            fixed_vector: The fixed vector used for FVSR execution.
+            num_segments: The number of times the app should be executed.
+            data: The fixed vector used for FVSR execution.
         """
         # MlDsaSca command.
         self._ujson_ml_dsa_sca_cmd()
@@ -67,7 +169,24 @@ class OTMLDSA:
         # Send the number of iterations and the fixed vector.
         time.sleep(0.01)
         data = {"data": [x for x in data],
-                "data_length": len(data),
+                "data_length": 4*len(data),
+                "iterations": num_segments}
+        self.target.write(json.dumps(data).encode("ascii"))
+
+    def ml_dsa_vec_intt_batch_fvsr(self, data: int, num_segments: list[int]):
+        """ Start FVSR execution for INTT in ML-DSA.
+        Args:
+            num_segments: The number of times the app should be executed.
+            data: The fixed vector used for FVSR execution.
+        """
+        # MlDsaSca command.
+        self._ujson_ml_dsa_sca_cmd()
+        # NttFvsr command.
+        self.target.write(json.dumps("InttFvsr").encode("ascii"))
+        # Send the number of iterations and the fixed vector.
+        time.sleep(0.01)
+        data = {"data": [x for x in data],
+                "data_length": 4*len(data),
                 "iterations": num_segments}
         self.target.write(json.dumps(data).encode("ascii"))
 
