@@ -219,7 +219,7 @@ def run_tvla(ctx: typer.Context):
                     force=True,)
 
     if (cfg["mode"] != "kmac" and cfg["mode"] != "aes" and cfg["mode"] != "sha3" and
-            cfg["mode"] != "otbn"):
+            cfg["mode"] != "otbn" and cfg["mode"] != "ml_dsa"):
         log.info("Unsupported mode:" + cfg["mode"] + ", falling back to \"aes\"")
 
     # Currently, specific TVLA exists only for AES.
@@ -564,7 +564,7 @@ def run_tvla(ctx: typer.Context):
                     keys = np.empty((num_traces_orig, key_len_bytes), dtype=np.uint8)
                 else:
                     keys = np.empty((num_traces_orig, 16), dtype=np.uint8)
-                    plaintexts = np.empty((num_traces_orig, 16), dtype=np.uint8)
+                    plaintexts = np.empty((num_traces_orig, cfg["ptxt_bytes"]), dtype=np.uint8)
 
                 if specific_test:
                     keys[:] = project.get_keys(trace_start, trace_end + 1)
@@ -1070,6 +1070,8 @@ def run_tvla(ctx: typer.Context):
                         "sha3": range(0, num_samples) if range_specified else range(1150, 3150),
                         # Simply plot all samples within the selected range.
                         "otbn": range(0, num_samples),
+                        # Simply plot all samples within the selected range.
+                        "ml_dsa": range(0, num_samples),
                     }
 
                 for i_order in range(num_orders):
@@ -1118,6 +1120,7 @@ default_test_type = "GENERAL_KEY"
 default_mode = "aes"
 default_filter_traces = True
 default_update_cfg_file = False
+default_ptxt_bytes = 16
 
 
 # Help messages of the options
@@ -1175,6 +1178,8 @@ help_filter_traces = inspect.cleandoc("""Excludes the outlier traces from the an
     Default: """ + str(default_filter_traces))
 help_update_cfg_file = inspect.cleandoc("""Update existing configuration file or create if there
     isn't any configuration file. Default: """ + str(default_update_cfg_file))
+help_ptxt_bytes = inspect.cleandoc("""Number of bytes contained in the plaintext. Default: """ +
+    str(default_ptxt_bytes))
 
 
 @app.callback()
@@ -1197,7 +1202,8 @@ def main(ctx: typer.Context,
          test_type: str = typer.Option(None, help=help_test_type),
          mode: str = typer.Option(None, help=help_mode),
          filter_traces: bool = typer.Option(None, help=help_filter_traces),
-         update_cfg_file: bool = typer.Option(None, help=help_update_cfg_file)):
+         update_cfg_file: bool = typer.Option(None, help=help_update_cfg_file),
+         ptxt_bytes: int = typer.Option(None, help=help_ptxt_bytes)):
     """A histogram-based TVLA described in "Fast Leakage Assessment" by O. Reparaz, B. Gierlichs and
     I. Verbauwhede (https://eprint.iacr.org/2017/624.pdf)."""
 
@@ -1207,7 +1213,8 @@ def main(ctx: typer.Context,
     for v in ['project_file', 'trace_file', 'trace_start', 'trace_end', 'leakage_file',
               'save_to_disk', 'save_to_disk_ttest', 'round_select', 'byte_select',
               'input_histogram_file', 'output_histogram_file', 'number_of_steps',
-              'ttest_step_file', 'plot_figures', 'test_type', 'mode', 'filter_traces']:
+              'ttest_step_file', 'plot_figures', 'test_type', 'mode', 'filter_traces',
+              'ptxt_bytes']:
         run_cmd = f'''cfg[v] = default_{v}'''
         exec(run_cmd)
 
@@ -1221,7 +1228,8 @@ def main(ctx: typer.Context,
     for v in ['project_file', 'trace_file', 'trace_start', 'trace_end', 'leakage_file',
               'save_to_disk', 'save_to_disk_ttest',
               'input_histogram_file', 'output_histogram_file', 'number_of_steps',
-              'ttest_step_file', 'plot_figures', 'test_type', 'mode', 'filter_traces']:
+              'ttest_step_file', 'plot_figures', 'test_type', 'mode', 'filter_traces',
+              'ptxt_bytes']:
         run_cmd = f'''if {v} is not None: cfg[v] = {v}'''
         exec(run_cmd)
     # The list arguments need to be handled a bit differently.
