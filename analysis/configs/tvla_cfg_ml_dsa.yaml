@@ -1,0 +1,21 @@
+project_file: ../capture/projects/ml_dsa_sca_capture.db
+trace_file: null
+trace_start: null
+trace_end: null
+trace_db: ot_trace_library
+leakage_file: null
+save_to_disk: null
+save_to_disk_ttest: null
+round_select: null
+byte_select: null
+input_histogram_file: null
+output_histogram_file: null
+number_of_steps: 1
+ttest_step_file: null
+plot_figures: true
+test_type: "GENERAL_DATA"
+mode: ml_dsa
+ptxt_bytes: 1024
+# Only enabled for otbn mode.
+sample_start: null
+num_samples : null
