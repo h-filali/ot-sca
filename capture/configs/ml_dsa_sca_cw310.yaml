@@ -26,9 +26,9 @@ husky:
   # VEC MAC cycles
   # num_cycles: 4970
   # NTT cycles
-  # num_cycles: 8791
+  num_cycles: 8791
   # INTT cycles
-  num_cycles: 9862
+  # num_cycles: 9862
   # Do not capture 30 nops that are inserted to give the trigger time to rise.
   offset_cycles: 30
   scope_gain: 27
@@ -46,8 +46,8 @@ test:
   # which_test: ml_dsa_vec_sub_batch_fvsr
   # which_test: ml_dsa_vec_mul_batch_fvsr
   # which_test: ml_dsa_vec_mac_batch_fvsr
-  # which_test: ml_dsa_vec_ntt_batch_fvsr
-  which_test: ml_dsa_vec_intt_batch_fvsr
+  which_test: ml_dsa_vec_ntt_fvsr
+  # which_test: ml_dsa_vec_intt_fvsr
 
   # seed for PRNG to generate sequence of plaintexts and keys; Python random
   # class on host, Mersenne twister implementation on OT SW.
