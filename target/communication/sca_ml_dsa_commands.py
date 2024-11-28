@@ -68,7 +68,8 @@ class OTMLDSA:
         time.sleep(0.01)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data),
-                "iterations": num_segments}
+                "iterations": num_segments,
+                "var_select": 0}
         self.target.write(json.dumps(data).encode("ascii"))
 
     def ml_dsa_decompose_batch_fvsr(self, data: int, num_segments: list[int]):
@@ -85,7 +86,8 @@ class OTMLDSA:
         time.sleep(0.01)
         data = {"data": data,
                 "data_length": 4,
-                "iterations": num_segments}
+                "iterations": num_segments,
+                "var_select": 0}
         self.target.write(json.dumps(data).encode("ascii"))
 
     def ml_dsa_vec_add_batch_fvsr(self, data: int, num_segments: list[int]):
@@ -102,7 +104,8 @@ class OTMLDSA:
         time.sleep(0.01)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data),
-                "iterations": num_segments}
+                "iterations": num_segments,
+                "var_select": 0}
         self.target.write(json.dumps(data).encode("ascii"))
 
     def ml_dsa_vec_sub_batch_fvsr(self, data: int, num_segments: list[int]):
@@ -119,7 +122,8 @@ class OTMLDSA:
         time.sleep(0.01)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data),
-                "iterations": num_segments}
+                "iterations": num_segments,
+                "var_select": 0}
         self.target.write(json.dumps(data).encode("ascii"))
 
     def ml_dsa_vec_mul_batch_fvsr(self, data: int, num_segments: list[int]):
@@ -136,7 +140,8 @@ class OTMLDSA:
         time.sleep(0.01)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data),
-                "iterations": num_segments}
+                "iterations": num_segments,
+                "var_select": 0}
         self.target.write(json.dumps(data).encode("ascii"))
 
     def ml_dsa_vec_mac_batch_fvsr(self, data: int, num_segments: list[int]):
@@ -153,7 +158,8 @@ class OTMLDSA:
         time.sleep(0.01)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data),
-                "iterations": num_segments}
+                "iterations": num_segments,
+                "var_select": 0}
         self.target.write(json.dumps(data).encode("ascii"))
 
     def ml_dsa_vec_ntt_batch_fvsr(self, data: int, num_segments: list[int]):
@@ -170,7 +176,23 @@ class OTMLDSA:
         time.sleep(0.01)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data),
-                "iterations": num_segments}
+                "iterations": num_segments,
+                "var_select": 0}
+        self.target.write(json.dumps(data).encode("ascii"))
+
+    def ml_dsa_vec_ntt_fvsr(self, data: int):
+        """ Start single execution for NTT in ML-DSA.
+        Args:
+            data: The fixed vector used for FVSR execution.
+        """
+        # MlDsaSca command.
+        self._ujson_ml_dsa_sca_cmd()
+        # Ntt command.
+        self.target.write(json.dumps("Ntt").encode("ascii"))
+        # Send the number of iterations and the fixed vector.
+        time.sleep(0.01)
+        data = {"data": [x for x in data],
+                "data_length": 4*len(data)}
         self.target.write(json.dumps(data).encode("ascii"))
 
     def ml_dsa_vec_intt_batch_fvsr(self, data: int, num_segments: list[int]):
@@ -187,7 +209,23 @@ class OTMLDSA:
         time.sleep(0.01)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data),
-                "iterations": num_segments}
+                "iterations": num_segments,
+                "var_select": 0}
+        self.target.write(json.dumps(data).encode("ascii"))
+
+    def ml_dsa_vec_intt_fvsr(self, data: int):
+        """ Start single execution for INTT in ML-DSA.
+        Args:
+            data: The fixed vector used for FVSR execution.
+        """
+        # MlDsaSca command.
+        self._ujson_ml_dsa_sca_cmd()
+        # Intt command.
+        self.target.write(json.dumps("Intt").encode("ascii"))
+        # Send the number of iterations and the fixed vector.
+        time.sleep(0.01)
+        data = {"data": [x for x in data],
+                "data_length": 4*len(data)}
         self.target.write(json.dumps(data).encode("ascii"))
 
     def start_test(self, testname: str, arg1 = None, arg2 = None) -> None:

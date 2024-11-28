@@ -178,7 +178,12 @@ def generate_data(test_mode, num_data):
         data_fixed: The fixed data set.
     """
     data = []
-    data_fixed = [0x0002C001 for _ in range(VEC_SIZE)]
+
+    if "vec" in test_mode:
+        data_fixed = [0x0002C001 for _ in range(VEC_SIZE)]
+    else:
+        data_fixed = [0x0002C001]
+
     # First sample is always fixed.
     sample_fixed = random.getrandbits(32) & 0x1
     for _ in range(num_data):
@@ -240,8 +245,7 @@ def capture(scope: Scope, ot_ml_dsa: OTMLDSA, ot_prng: OTPRNG,
             if "batch" in capture_cfg.test_mode:
                 num_data = capture_cfg.num_segments
             else:
-                # In non-batch mode, 8 uint32 values are used.
-                num_data = 8
+                num_data = 1
 
             # Generate data set used for the test.
             data, data_fixed = generate_data(capture_cfg.test_mode, num_data)
@@ -260,48 +264,33 @@ def capture(scope: Scope, ot_ml_dsa: OTMLDSA, ot_prng: OTPRNG,
             else:
                 # In the non-batch mode, the dataset is generated in ot-sca and
                 # transferred to the device. Trigger is set once.
-                ot_ml_dsa.start_test(capture_cfg.test_mode, data)
+                ot_ml_dsa.start_test(capture_cfg.test_mode, data[0])
 
             # Capture traces.
             waves = scope.capture_and_transfer_waves(target)
             assert waves.shape[0] == capture_cfg.num_segments
 
+            # Check response.
             response = ot_ml_dsa.ml_dsa_sca_read_response()
-            # Check response. 0 for non-batch and the last data element in
-            # batch mode.
-            if "batch" in capture_cfg.test_mode:
-                assert response == data[-1][-1]
-            else:
-                assert response == 0
+            assert response == data[-1][-1]
 
             # Store traces.
-            if "batch" in capture_cfg.test_mode:
-                for i in range(capture_cfg.num_segments):
-                    d_bytes = [number.to_bytes(4, byteorder='big') for number in data[i]]
-                    # Sanity check retrieved data (wave).
-                    assert len(waves[i, :]) >= 1
-                    # Store trace into database.
-                    project.append_trace(wave = waves[i, :],
-                                         plaintext = b''.join(d_bytes),
-                                         ciphertext = None,
-                                         key = None)
-            else:
-                for d in data:
-                    d_bytes = [number.to_bytes(4, byteorder='big') for number in d]
-                    # Sanity check retrieved data (wave).
-                    assert len(waves[0, :]) >= 1
-                    # Store trace into database.
-                    project.append_trace(wave = waves[0, :],
-                                         plaintext = b''.join(d_bytes),
-                                         ciphertext = None,
-                                         key = None)
+            for i, d in enumerate(data):
+                d_bytes = [number.to_bytes(4, byteorder='big') for number in d]
+                # Sanity check retrieved data (wave).
+                assert len(waves[i, :]) >= 1
+                # Store trace into database.
+                project.append_trace(wave = waves[i, :],
+                                        plaintext = b''.join(d_bytes),
+                                        ciphertext = None,
+                                        key = None)
 
             # Memory allocation optimization for CW trace library.
             num_segments_storage = project.optimize_capture(num_segments_storage)
 
             # Update the loop variable and the progress bar.
-            remaining_num_traces -= capture_cfg.num_segments
-            pbar.update(capture_cfg.num_segments)
+            remaining_num_traces -= num_data
+            pbar.update(num_data)
     return device_id
 
 
