@@ -7,9 +7,11 @@ target:
   target_freq: 24000000
   baudrate: 115200
   protocol: "ujson"
-  port: "/dev/ttyACM3"
+  port: "/dev/opentitan/cw310_tty_03"
+  usb_serial: "51203120375053503130343233313030"
   trigger: "sw"
 husky:
+  usb_serial: "50203120314136503130383130313031"
   sampling_rate: 200000000
   num_segments: 1
   # Maximum number of samples that can be recorded is 98352 (11802 cycles)
@@ -36,7 +38,7 @@ capture:
   scope_select: husky
   num_traces: 20
   show_plot: True
-  plot_traces: 20
+  plot_traces: 100
   trace_db: ot_trace_library
   trace_threshold: 10000
 test:

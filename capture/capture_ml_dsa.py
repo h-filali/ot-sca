@@ -93,7 +93,9 @@ def setup(cfg: dict, project: Path):
         baudrate = cfg["target"].get("baudrate"),
         port = cfg["target"].get("port"),
         output_len = cfg["target"].get("output_len_bytes"),
-        usb_serial = cfg["target"].get("usb_serial")
+        usb_serial = cfg["target"].get("usb_serial"),
+        interface = cfg["target"].get("interface"),
+        husky_serial = cfg["husky"].get("usb_serial")
     )
     target = Target(target_cfg)
 
@@ -128,6 +130,7 @@ def setup(cfg: dict, project: Path):
         sparsing = cfg[scope_type].get("sparsing"),
         scope_gain = cfg[scope_type].get("scope_gain"),
         pll_frequency = cfg["target"]["pll_frequency"],
+        scope_sn = cfg[scope_type].get("usb_serial"),
     )
     scope = Scope(scope_cfg)
 
@@ -245,7 +248,8 @@ def capture(scope: Scope, ot_ml_dsa: OTMLDSA, ot_prng: OTPRNG,
             if "batch" in capture_cfg.test_mode:
                 num_data = capture_cfg.num_segments
             else:
-                num_data = 1
+                # In non-batch mode, 8 uint32 values are used.
+                num_data = 8
 
             # Generate data set used for the test.
             data, data_fixed = generate_data(capture_cfg.test_mode, num_data)
@@ -272,18 +276,35 @@ def capture(scope: Scope, ot_ml_dsa: OTMLDSA, ot_prng: OTPRNG,
 
             # Check response.
             response = ot_ml_dsa.ml_dsa_sca_read_response()
-            assert response == data[-1][-1]
+            # Check response. 0 for non-batch and the last data element in
+            # batch mode.
+            if "batch" in capture_cfg.test_mode:
+                assert response == data[-1][-1]
+            else:
+                assert response == 0
 
             # Store traces.
-            for i, d in enumerate(data):
-                d_bytes = [number.to_bytes(4, byteorder='big') for number in d]
-                # Sanity check retrieved data (wave).
-                assert len(waves[i, :]) >= 1
-                # Store trace into database.
-                project.append_trace(wave = waves[i, :],
-                                        plaintext = b''.join(d_bytes),
-                                        ciphertext = None,
-                                        key = None)
+            if "batch" in capture_cfg.test_mode:
+                for i in range(capture_cfg.num_segments):
+                    # Sanity check retrieved data (wave).
+                    assert len(waves[i, :]) >= 1
+                    # Store trace into database.
+                    project.append_trace(wave = waves[i, :],
+                                         plaintext = bytes(data[i]),
+                                         ciphertext = None,
+                                         key = None)
+            else:
+                # Convert data into bytearray for storage in database.
+                data_bytes = []
+                for d in data:
+                    data_bytes.append(d)
+                    # Sanity check retrieved data (wave).
+                    assert len(waves[0, :]) >= 1
+                    # Store trace into database.
+                    project.append_trace(wave = waves[0, :],
+                                         plaintext = bytes(data_bytes),
+                                         ciphertext = None,
+                                         key = None)
 
             # Memory allocation optimization for CW trace library.
             num_segments_storage = project.optimize_capture(num_segments_storage)
