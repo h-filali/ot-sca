@@ -19,7 +19,7 @@ class OTMLDSA:
     def _ujson_ml_dsa_sca_cmd(self):
         # TODO: without the delay, the device uJSON command handler program
         # does not recognize the commands. Tracked in issue #256.
-        time.sleep(0.01)
+        time.sleep(0.1)
         self.target.write(json.dumps("MlDsaSca").encode("ascii"))
 
     def ml_dsa_sca_read_response(self, num_attempts: Optional[int] = 100):
@@ -54,7 +54,21 @@ class OTMLDSA:
             # Read back device ID from device.
             return self.read_response(max_tries=30)
 
-    def ml_dsa_vec_reject_batch_fvsr(self, data: int, num_segments: list[int]):
+    def seed_lfsr(self, seed):
+        """ Seed the LFSR.
+        Args:
+            seed: The 4-byte seed.
+        """
+        # MlDsaSca command.
+        self._ujson_ml_dsa_sca_cmd()
+        # SeedLfsr command.
+        self.target.write(json.dumps("SeedLfsr").encode("ascii"))
+        # Seed payload.
+        time.sleep(0.1)
+        seed_data = {"seed": [x for x in seed]}
+        self.target.write(json.dumps(seed_data).encode("ascii"))
+
+    def ml_dsa_reject_fvsr(self, data: int):
         """ Start FVSR execution for rejection sampling in ML-DSA.
         Args:
             num_segments: The number of times the app should be executed.
@@ -65,14 +79,12 @@ class OTMLDSA:
         # NttFvsr command.
         self.target.write(json.dumps("RejectFvsr").encode("ascii"))
         # Send the number of iterations and the fixed vector.
-        time.sleep(0.01)
+        time.sleep(0.1)
         data = {"data": [x for x in data],
-                "data_length": 4*len(data),
-                "iterations": num_segments,
-                "var_select": 0}
+                "data_length": 4*len(data)}
         self.target.write(json.dumps(data).encode("ascii"))
 
-    def ml_dsa_decompose_batch_fvsr(self, data: int, num_segments: list[int]):
+    def ml_dsa_decompose_fvsr(self, data: int):
         """ Start FVSR execution for decompose in ML-DSA.
         Args:
             num_segments: The number of times the app should be executed.
@@ -83,11 +95,9 @@ class OTMLDSA:
         # NttFvsr command.
         self.target.write(json.dumps("DecomposeFvsr").encode("ascii"))
         # Send the number of iterations and the fixed vector.
-        time.sleep(0.01)
-        data = {"data": data,
-                "data_length": 4,
-                "iterations": num_segments,
-                "var_select": 0}
+        time.sleep(0.1)
+        data = {"data": [x for x in data],
+                "data_length": 4*len(data)}
         self.target.write(json.dumps(data).encode("ascii"))
 
     def ml_dsa_vec_add_batch_fvsr(self, data: int, num_segments: list[int]):
@@ -101,7 +111,7 @@ class OTMLDSA:
         # NttFvsr command.
         self.target.write(json.dumps("VecAddFvsr").encode("ascii"))
         # Send the number of iterations and the fixed vector.
-        time.sleep(0.01)
+        time.sleep(0.1)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data),
                 "iterations": num_segments,
@@ -119,7 +129,7 @@ class OTMLDSA:
         # NttFvsr command.
         self.target.write(json.dumps("VecSubFvsr").encode("ascii"))
         # Send the number of iterations and the fixed vector.
-        time.sleep(0.01)
+        time.sleep(0.1)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data),
                 "iterations": num_segments,
@@ -137,7 +147,7 @@ class OTMLDSA:
         # NttFvsr command.
         self.target.write(json.dumps("VecMulFvsr").encode("ascii"))
         # Send the number of iterations and the fixed vector.
-        time.sleep(0.01)
+        time.sleep(0.1)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data),
                 "iterations": num_segments,
@@ -155,7 +165,7 @@ class OTMLDSA:
         # NttFvsr command.
         self.target.write(json.dumps("VecMacFvsr").encode("ascii"))
         # Send the number of iterations and the fixed vector.
-        time.sleep(0.01)
+        time.sleep(0.1)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data),
                 "iterations": num_segments,
@@ -173,7 +183,7 @@ class OTMLDSA:
         # NttFvsr command.
         self.target.write(json.dumps("NttFvsr").encode("ascii"))
         # Send the number of iterations and the fixed vector.
-        time.sleep(0.01)
+        time.sleep(0.1)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data),
                 "iterations": num_segments,
@@ -190,7 +200,7 @@ class OTMLDSA:
         # Ntt command.
         self.target.write(json.dumps("Ntt").encode("ascii"))
         # Send the number of iterations and the fixed vector.
-        time.sleep(0.01)
+        time.sleep(0.1)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data)}
         self.target.write(json.dumps(data).encode("ascii"))
@@ -206,7 +216,7 @@ class OTMLDSA:
         # NttFvsr command.
         self.target.write(json.dumps("InttFvsr").encode("ascii"))
         # Send the number of iterations and the fixed vector.
-        time.sleep(0.01)
+        time.sleep(0.1)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data),
                 "iterations": num_segments,
@@ -223,7 +233,7 @@ class OTMLDSA:
         # Intt command.
         self.target.write(json.dumps("Intt").encode("ascii"))
         # Send the number of iterations and the fixed vector.
-        time.sleep(0.01)
+        time.sleep(0.1)
         data = {"data": [x for x in data],
                 "data_length": 4*len(data)}
         self.target.write(json.dumps(data).encode("ascii"))
