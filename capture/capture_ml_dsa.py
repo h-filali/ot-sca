@@ -38,6 +38,8 @@ Typical usage:
 # Constants
 VEC_SIZE = 256
 MODULUS = 8380417
+GAMMA2 = 190464
+MOD_DIV_GAMMA2 = MODULUS // GAMMA2
 
 logger = logging.getLogger()
 
@@ -64,6 +66,7 @@ class CaptureConfig:
     protocol: str
     port: Optional[str] = "None"
     batch_prng_seed: Optional[str] = "None"
+    lfsr_seed: Optional[str] = "None"
 
 
 def setup(cfg: dict, project: Path):
@@ -181,6 +184,7 @@ def generate_data(test_mode, num_data):
         data_fixed: The fixed data set.
     """
     data = []
+    decompose_data = []
 
     if "vec" in test_mode:
         data_fixed = [0x0002C001 for _ in range(VEC_SIZE)]
@@ -191,21 +195,31 @@ def generate_data(test_mode, num_data):
     sample_fixed = random.getrandbits(32) & 0x1
     for _ in range(num_data):
         if "fvsr" in test_mode:
-            if sample_fixed:
+            if sample_fixed and "decompose" in test_mode:
+                coeff = data_fixed[0]
+                decompose_data.append([coeff])
+                coeff += (random.getrandbits(32) % MOD_DIV_GAMMA2) * GAMMA2
+                data.append([coeff])
+            elif sample_fixed:
                 data.append(data_fixed)
             elif "vec" in test_mode:
                 data.append([random.getrandbits(32) % MODULUS for _ in range(VEC_SIZE)])
+            elif "decompose" in test_mode:
+                coeff = random.getrandbits(32) % GAMMA2
+                decompose_data.append([coeff])
+                coeff += (random.getrandbits(32) % MOD_DIV_GAMMA2) * GAMMA2
+                data.append([coeff])
             else:
-                data.append(random.getrandbits(32) % MODULUS)
+                data.append([random.getrandbits(32) % MODULUS])
             sample_fixed = random.getrandbits(32) & 0x1
         elif "random" in test_mode:
             if "vec" in test_mode:
                 data.append([random.getrandbits(32) % MODULUS for _ in range(VEC_SIZE)])
             else:
-                data.append(random.getrandbits(32) % MODULUS)
+                data.append([random.getrandbits(32) % MODULUS])
         else:
             raise RuntimeError("Error: Invalid test mode!")
-    return data, data_fixed
+    return data, data_fixed, decompose_data
 
 
 def capture(scope: Scope, ot_ml_dsa: OTMLDSA, ot_prng: OTPRNG,
@@ -226,6 +240,11 @@ def capture(scope: Scope, ot_ml_dsa: OTMLDSA, ot_prng: OTPRNG,
         device_id: The ID of the target device.
     """
     device_id = ot_ml_dsa.init()
+
+    # Seed the software LFSR used for initial key masking and additionally
+    # turning off the masking when '0'.
+    ot_ml_dsa.seed_lfsr(capture_cfg.lfsr_seed.to_bytes(4, "little"))
+
     # Optimization for CW trace library.
     num_segments_storage = 1
 
@@ -248,11 +267,10 @@ def capture(scope: Scope, ot_ml_dsa: OTMLDSA, ot_prng: OTPRNG,
             if "batch" in capture_cfg.test_mode:
                 num_data = capture_cfg.num_segments
             else:
-                # In non-batch mode, 8 uint32 values are used.
-                num_data = 8
+                num_data = 1
 
             # Generate data set used for the test.
-            data, data_fixed = generate_data(capture_cfg.test_mode, num_data)
+            data, data_fixed, decompose_data = generate_data(capture_cfg.test_mode, num_data)
             # Start the test based on the mode.
             if "batch" in capture_cfg.test_mode:
                 if "fvsr" in capture_cfg.test_mode:
@@ -278,33 +296,43 @@ def capture(scope: Scope, ot_ml_dsa: OTMLDSA, ot_prng: OTPRNG,
             response = ot_ml_dsa.ml_dsa_sca_read_response()
             # Check response. 0 for non-batch and the last data element in
             # batch mode.
-            if "batch" in capture_cfg.test_mode:
-                assert response == data[-1][-1]
-            else:
-                assert response == 0
+            assert response == data[-1][-1]
 
             # Store traces.
             if "batch" in capture_cfg.test_mode:
                 for i in range(capture_cfg.num_segments):
+                    # Convert data into bytearray for storage in database.
+                    data_bytes = bytes()
+                    if "decompose" in capture_cfg.test_mode:
+                        for d in decompose_data[i]:
+                            data_bytes += d.to_bytes(4, 'little')
+                    else:
+                        for d in data[i]:
+                            data_bytes += d.to_bytes(4, 'little')
                     # Sanity check retrieved data (wave).
                     assert len(waves[i, :]) >= 1
                     # Store trace into database.
                     project.append_trace(wave = waves[i, :],
-                                         plaintext = bytes(data[i]),
+                                         plaintext = bytes(data_bytes),
                                          ciphertext = None,
                                          key = None)
             else:
                 # Convert data into bytearray for storage in database.
-                data_bytes = []
-                for d in data:
-                    data_bytes.append(d)
-                    # Sanity check retrieved data (wave).
-                    assert len(waves[0, :]) >= 1
-                    # Store trace into database.
-                    project.append_trace(wave = waves[0, :],
-                                         plaintext = bytes(data_bytes),
-                                         ciphertext = None,
-                                         key = None)
+                data_bytes = bytes()
+                if "decompose" in capture_cfg.test_mode:
+                    for d in decompose_data[0]:
+                        data_bytes += d.to_bytes(4, 'little')
+                else:
+                    for d in data[0]:
+                        data_bytes += d.to_bytes(4, 'little')
+
+                # Sanity check retrieved data (wave).
+                assert len(waves[0, :]) >= 1
+                # Store trace into database.
+                project.append_trace(wave = waves[0, :],
+                                     plaintext = bytes(data_bytes),
+                                     ciphertext = None,
+                                     key = None)
 
             # Memory allocation optimization for CW trace library.
             num_segments_storage = project.optimize_capture(num_segments_storage)
@@ -360,7 +388,8 @@ def main(argv=None):
                                 num_segments = scope.scope_cfg.num_segments,
                                 protocol = cfg["target"]["protocol"],
                                 port = cfg["target"].get("port"),
-                                batch_prng_seed = cfg["test"].get("batch_prng_seed"))
+                                batch_prng_seed = cfg["test"].get("batch_prng_seed"),
+                                lfsr_seed = cfg["test"].get("lfsr_seed"))
     logger.info(f"Setting up capture {capture_cfg.test_mode}...")
 
     # Open communication with target.
